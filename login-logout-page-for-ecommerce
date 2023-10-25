@@ -1,0 +1,284 @@
+<?php
+// including connection file
+include( 'connect.php' );
+
+//  we do not use ../because present in folder itself only but single .will work
+
+@session_start();
+if(isset($_SESSION['username'])) {
+    header("Location: index.php"); // redirects them to homepage
+    exit; // for good m easure
+}
+
+?>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Slide Navbar</title>
+    <link rel='stylesheet' type='text/css' href=''>
+    <link href='https://fonts.googleapis.com/css2?family=Jost:wght@500&display=swap' rel='stylesheet'>
+</head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Jost', sans-serif;
+    background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+}
+
+.main {
+    width: 450px;
+    height: 500px;
+    background: red;
+    overflow: hidden;
+    background: url('https://doc-08-2c-docs.googleusercontent.com/docs/securesc/68c90smiglihng9534mvqmq1946dmis5/fo0picsp1nhiucmc0l25s29respgpr4j/1631524275000/03522360960922298374/03522360960922298374/1Sx0jhdpEpnNIydS4rnN4kHSJtU1EyWka?e=view&authuser=0&nonce=gcrocepgbb17m&user=03522360960922298374&hash=tfhgbs86ka6divo3llbvp93mg4csvb38') no-repeat center/ cover;
+    border-radius: 10px;
+    box-shadow: 5px 20px 50px #000;
+}
+
+#chk {
+    display: none;
+}
+
+.signup {
+    position: relative;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    width: 100%;
+    height: 100%;
+}
+
+label {
+    color: #fff;
+    font-size: 2.3em;
+    justify-content: center;
+    display: flex;
+    margin: 60px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.5s ease-in-out;
+}
+
+.signup-name {
+    font-size: 1.3em;
+    margin: 6px;
+    font-weight: bold;
+}
+
+input {
+    width: 60%;
+    height: 20px;
+    background: #e0dede;
+    justify-content: center;
+    display: flex;
+    margin: 20px auto;
+    padding: 10px;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+}
+
+button {
+    width: 60%;
+    height: 40px;
+    margin: 10px auto;
+    justify-content: center;
+    display: block;
+    color: #fff;
+    background: #573b8a;
+    font-size: 1em;
+    font-weight: bold;
+    margin-top: 20px;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    transition: 0.2s ease-in;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #6d44b8;
+}
+
+.login {
+    height: 460px;
+    background: #eee;
+    border-radius: 60% / 10%;
+    transform: translateY(-180px);
+    transition: 0.8s ease-in-out;
+}
+
+.login label {
+    color: #573b8a;
+    transform: scale(0.6);
+}
+
+#chk:checked~.login {
+    transform: translateY(-500px);
+}
+
+#chk:checked~.login label {
+    transform: scale(1);
+}
+
+#chk:checked~.signup label {
+    transform: scale(0.6);
+}
+</style>
+
+<body>
+    <div class='main'>
+        <input type='checkbox' id='chk' aria-hidden='true'>
+
+        <div class='signup'>
+            <form method='post' enctype='multipart/form-data'>
+                <label for='chk' aria-hidden='true'>Sign up</label>
+                <input type='text' name='user_username' placeholder='User name' required='required' autocomplete='off'>
+                <input type='email' name='user_email' placeholder='Email' required='required'>
+                <label for='user_image' class='signup-name'>User Image</label>
+                <input type='file' name='user_image'>
+                <input type='password' name='user_password' id='user_password' placeholder='Password' required=''>
+                <input type='password' name='conf_user_password' id='conf_user_password' placeholder='confirm Password'
+                    required=''>
+                <input type='text' name='user_address' id='user_address' placeholder='address' required=''>
+                <input type='text' name='user_contact' id='user_contact' placeholder='mobile number' required=''>
+
+                <button type='submit' name='user_register'>Sign up</button><br><br><br><br>
+            </form>
+        </div>
+
+        <div class='login'>
+            <form method='post' enctype='multipart/form-data'>
+                <label for='chk' aria-hidden='true'>Login</label>
+                <input type='text' name='user_username' placeholder='User name' required='required' autocomplete='off'>
+                <input type='password' name='user_password' id='user_password' placeholder='Password' required=''>
+                <button name='user_login'>Login</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
+<!-- php code -->
+<?php
+if ( isset( $_POST[ 'user_register' ] ) ) {
+    $user_username = $_POST[ 'user_username' ];
+    $user_email = $_POST[ 'user_email' ];
+    $user_password = $_POST[ 'user_password' ];
+    // hashing the password
+    $hash_password = password_hash( $user_password, PASSWORD_DEFAULT );
+    $conf_user_password = $_POST[ 'conf_user_password' ];
+    $user_address = $_POST[ 'user_address' ];
+    $user_contact = $_POST[ 'user_contact' ];
+    $user_image = $_FILES[ 'user_image' ][ 'name' ];
+
+    $user_image_tmp = $_FILES[ 'user_image' ][ 'tmp_name' ];
+    $user_ip = getIPAddress();
+    move_uploaded_file( $user_image_tmp, 'user_images' );
+    //select query user existence
+    $select_query = "Select * from `user_login` where user_name='$user_username' or user_email='$user_email'";
+    $result = mysqli_query( $con, $select_query );
+    $row_count = mysqli_num_rows( $result );
+    if ( $row_count>0 ) {
+        echo "<script>alert('User Already exsist')</script>";
+    } else if ( $user_password != $conf_user_password ) {
+        echo "<script>alert('password does not match!')</script>";
+    } else {
+        $insert_query = "INSERT INTO `user_login` (user_name, user_email, user_password, user_image, user_ip, user_address, user_mobile) 
+  VALUES ('$user_username', '$user_email', '$hash_password', '$user_image', '$user_ip', '$user_address', '$user_contact')";
+        $sql_execute = mysqli_query( $con, $insert_query );
+
+    }
+    //insert query
+
+    // if ( $sql_execute ) {
+    //   echo "<script>alert('data inserted')</script>";
+    // }
+    // else {
+    //   die( mysqli_error( $con ) );
+    // }
+    // selecting cart items for user
+    $select_cart_item = "Select * from `cart_details` where ip_address= '$user_ip'";
+    $result_cart = mysqli_query( $con, $select_cart_item );
+    $rows_count = mysqli_num_rows( $result_cart );
+    if ( $rows_count>0 ) {
+        $_SESSION[ 'username' ] = $user_username;
+        echo "<script>alert('Your Items are Present in your cart!')</script>";
+        echo "<script>window.open('checkout.php','_self')</script>";
+    } else {
+        echo "<script>window.open('index.php','_self')</script>";
+    }
+}
+
+
+// tracing cart items user redirection
+
+?>
+<?php
+// user login logic
+if(isset($_POST['user_login'])){
+    $user_username=$_POST['user_username'];
+    $user_password=$_POST['user_password'];
+    // echo $user_password;
+    $select_query="SELECT * FROM `user_login` where user_name='$user_username'";
+    $result = mysqli_query($con,$select_query);
+    $row_counts=mysqli_num_rows($result);
+    $row_datas=mysqli_fetch_assoc($result);
+    $user_ip=getIPAddress();
+
+    // tracing cart items user redirection
+ $select_cart="SELECT * FROM `cart_details` where  ip_address= '$user_ip'";
+
+ $select_cart = mysqli_query($con,$select_cart);
+ $row_count_cart=mysqli_num_rows( $select_cart); 
+
+    if($row_counts>0){
+        if(password_verify($user_password,$row_datas['user_password'])){
+            // echo "<script>alert('Login Successfully')</script>";
+            if($row_counts==1 and $row_count_cart==0){
+                $_SESSION['username']=$user_username;
+    echo "<script>alert('Login Successful')</script>"; 
+    echo "<script>window.open('profile.php','_self')</script>";
+    // header("Location: profile.php");
+            }
+            else{
+                $_SESSION['username']=$user_username;
+                echo "<script>alert('Login Successful')</script>";
+    echo "<script>window.open('payment.php','_self')</script>";
+            }
+
+        }
+        else{
+            echo "<script>alert('Invalid Credential 
+         Please register yourself!')</script>";
+        }
+    }
+    else{
+        echo "<script>alert('Invalid Credential 
+         Please register yourself!')</script>";
+    }
+
+}
+?>
+
+
+// logout php code 
+
+<?php
+ 
+session_start();
+session_unset();
+unset($_SESSION['username']);
+session_destroy();
+header("location: index.php");
+
+exit();
+
+
+
+?> 
